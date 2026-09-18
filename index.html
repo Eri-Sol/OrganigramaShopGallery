@@ -116,17 +116,22 @@
   }
   .node.lvl0 rect{ fill:#263C4D; stroke:#263C4D; }
   .node.lvl1 rect{ fill:#486A82; stroke:#486A82; }
-  .node.lvl2 rect{ fill:var(--accent, #668AA4); stroke:var(--accent,#668AA4); }
-  .node.lvl3 rect{ fill:#E8F0F5; stroke:#B7C9D6; }
-  .node.lvl4 rect, .node.lvl5 rect, .node.lvl6 rect{ fill:#F8FBFD; stroke:#C7D5DF; }
+  .node.lvl2 rect{ fill:#668AA4; stroke:#668AA4; }
+  .node.lvl3 rect{ fill:#BFD3E0; stroke:#9FB9CA; }
+  .node.coordinator rect{ fill:#FFFFFF !important; stroke:#C7D5DF !important; }
+  .node.coordinator .name{ fill:var(--ink) !important; }
+  .node.coordinator .title{ fill:var(--ink-soft) !important; }
+  .node.lvl4 rect, .node.lvl5 rect, .node.lvl6 rect{ fill:#C4C8CB; stroke:#AEB5BA; }
+  .node.force-white rect{ fill:#C4C8CB; stroke:#AEB5BA; }
   .node .name{
-    font-size:12.5px;
+    font-size:15.5px;
     font-weight:700;
     fill:var(--ink);
     text-anchor:middle;
   }
   .node .title{
-    font-size:10px;
+    font-size:13px;
+    font-weight:500;
     fill:var(--ink-soft);
     text-anchor:middle;
   }
@@ -246,10 +251,6 @@
 const AREAS = [
   {
     id:"general", label:"Organigrama General", accent:"#607D94",
-    sharedReports:[
-      {name:"Santiago Moreno", title:"Asistente Comercial", managers:["Daniela Lopez","Analia Diez","Luciana Jeronsky"]},
-      {name:"Juan Pablo Bascaran", title:"Asistente Comercial", managers:["Daniela Lopez","Analia Diez","Luciana Jeronsky"]}
-    ],
     root:{ name:"Manuel Aubone", title:"Director", children:[
       { name:"Lucas Rudi", title:"Gerente General", children:[
         { name:"Sergio Servia", title:"Gerente de Ventas", children:[
@@ -271,7 +272,9 @@ const AREAS = [
           { name:"Lucas Maratea", title:"Coordinador Comercial", children:[
             { name:"Daniela Lopez", title:"Responsable Comercial", children:[{ name:"Mateo Forlani", title:"Analista Comercial" }]},
             { name:"Analia Diez", title:"Responsable Comercial", children:[{ name:"Delfina Mastrostefano", title:"Analista Comercial" }]},
-            { name:"Luciana Jeronsky", title:"Responsable Comercial", children:[{ name:"Milagros Guillen", title:"Analista Comercial" }]}
+            { name:"Luciana Jeronsky", title:"Responsable Comercial", children:[{ name:"Milagros Guillen", title:"Analista Comercial" }]},
+            { name:"Santiago Moreno", title:"Asistente Comercial" },
+            { name:"Juan Pablo Bascaran", title:"Asistente Comercial" }
           ]},
           { name:"Noelia Romero", title:"Jefa de Imagen", children:[{ name:"Luciana Palazzo", title:"Analista de Imagen" }]}
         ]},
@@ -355,10 +358,6 @@ const AREAS = [
   },
   {
     id:"comercial", label:"Comercial", accent:"#6F96AD",
-    sharedReports:[
-      {name:"Santiago Moreno", title:"Asistente Comercial", managers:["Daniela Lopez","Analia Diez","Luciana Jeronsky"]},
-      {name:"Juan Pablo Bascaran", title:"Asistente Comercial", managers:["Daniela Lopez","Analia Diez","Luciana Jeronsky"]}
-    ],
     root:{ name:"Manuel Aubone", title:"Director", children:[{ name:"Lucas Rudi", title:"Gerente General", children:[{ name:"Joaquin Fioravanti", title:"Gerente Comercial", children:[
       { name:"Lucas Maratea", title:"Coordinador Comercial", children:[
         { name:"Daniela Lopez", title:"Responsable Comercial", children:[
@@ -370,6 +369,8 @@ const AREAS = [
         { name:"Luciana Jeronsky", title:"Responsable Comercial", children:[
           { name:"Milagros Guillen", title:"Analista Comercial" }
         ]},
+        { name:"Santiago Moreno", title:"Asistente Comercial" },
+        { name:"Juan Pablo Bascaran", title:"Asistente Comercial" },
       ]},
       { name:"Noelia Romero", title:"Jefa de Imagen", children:[
         { name:"Luciana Palazzo", title:"Analista de Imagen" }
@@ -453,7 +454,7 @@ const AREAS = [
    LAYOUT + RENDER
    ============================================================ */
 
-const BOXW = 218, BOXH = 60, GAPX = 24, GAPY = 82, STUB = 20;
+const BOXW = 238, BOXH = 70, GAPX = 24, GAPY = 82, STUB = 20;
 
 function countPeople(node){
   let n = 1;
@@ -535,14 +536,20 @@ function renderArea(area){
   // nodes
   nodes.forEach(n=>{
     const x = originX+n.x, y = originY+n.level*(BOXH+GAPY);
-    const lvlClass = `lvl${Math.min(n.level,6)}`;
-    const g = el('g', {class:`node ${lvlClass}`, 'data-name':n.name.toLowerCase(), 'data-title':(n.title||'').toLowerCase(), style: n.level===2?`--accent:${area.accent}`:''});
+    const role = (n.title||'').toLowerCase();
+    let lvlClass = 'lvl4';
+    if(role === 'director') lvlClass = 'lvl0';
+    else if(role === 'gerente general') lvlClass = 'lvl1';
+    else if(role.includes('gerente')) lvlClass = 'lvl2';
+    else if(role.includes('jefe') || role.includes('jefa')) lvlClass = 'lvl3';
+    const isCoordinator = role.includes('coordinador') || role.includes('coordinadora');
+    const g = el('g', {class:`node ${lvlClass}${isCoordinator ? ' coordinator' : ''}`, 'data-name':n.name.toLowerCase(), 'data-title':(n.title||'').toLowerCase(), style: lvlClass==='lvl2'?`--accent:#668AA4`:''});
     g.appendChild(el('rect',{x,y,width:BOXW,height:BOXH,rx:8,ry:8}));
-    const nameT = el('text',{class:'name', x:x+BOXW/2, y:y+24});
+    const nameT = el('text',{class:'name', x:x+BOXW/2, y:y+28});
     nameT.textContent = n.name;
     g.appendChild(nameT);
     if(n.title){
-      const titleT = el('text',{class:'title', x:x+BOXW/2, y:y+40});
+      const titleT = el('text',{class:'title', x:x+BOXW/2, y:y+49});
       titleT.textContent = n.title;
       g.appendChild(titleT);
     }
@@ -578,8 +585,8 @@ function renderArea(area){
         gEdges.appendChild(el('path',{class:'edge', d:`M${cx},${busY} L${cx},${y}`}));
         const g=el('g',{class:'node lvl4','data-name':r.name.toLowerCase(),'data-title':r.title.toLowerCase()});
         g.appendChild(el('rect',{x,y,width:BOXW,height:BOXH,rx:8,ry:8}));
-        const nt=el('text',{class:'name',x:x+BOXW/2,y:y+25}); nt.textContent=r.name; g.appendChild(nt);
-        const tt=el('text',{class:'title',x:x+BOXW/2,y:y+42}); tt.textContent=r.title; g.appendChild(tt);
+        const nt=el('text',{class:'name',x:x+BOXW/2,y:y+29}); nt.textContent=r.name; g.appendChild(nt);
+        const tt=el('text',{class:'title',x:x+BOXW/2,y:y+50}); tt.textContent=r.title; g.appendChild(tt);
         gNodes.appendChild(g);
       });
     }
